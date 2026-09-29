@@ -13,7 +13,27 @@ import type { Actor, Role } from './guards';
  * a password can revoke their access immediately.
  */
 
-export const SESSION_TTL_DAYS = 7;
+/**
+ * How long a sign-in lasts.
+ *
+ * "Remember me" never expires on its own — the session ends only when the
+ * person signs out, or when an admin deactivates them or resets their password.
+ * Without it the session lasts a day AND the cookie is a session cookie, which
+ * the browser discards when it closes — the safer default on a shared machine.
+ */
+export const REMEMBERED_TTL_DAYS = 365 * 100;
+export const SESSION_TTL_DAYS = 1;
+
+/**
+ * Browsers refuse to keep a cookie longer than this (Chrome and Edge cap at
+ * 400 days), so the cookie is capped here while the session itself does not
+ * expire. Signing in again issues a fresh cookie.
+ */
+export const COOKIE_MAX_DAYS = 400;
+
+export function sessionTtlMs(remember: boolean): number {
+  return (remember ? REMEMBERED_TTL_DAYS : SESSION_TTL_DAYS) * 86_400_000;
+}
 
 /**
  * The two sites use different cookie names, so a participant's cookie is never
@@ -24,13 +44,19 @@ export const COOKIE_NAMES: Record<Role, string> = {
   admin: 'tcl_a_session',
 };
 
-export function cookieOptions(expiresAt: Date) {
+/**
+ * Omitting `expires` makes it a session cookie, cleared when the browser
+ * closes. The database row still has its own expiry either way, so a forgotten
+ * cookie can never outlive the session it points at.
+ */
+export function cookieOptions(expiresAt: Date, remember = true) {
+  const cap = new Date(Date.now() + COOKIE_MAX_DAYS * 86_400_000);
   return {
     httpOnly: true,
     secure: env.isProduction,
     sameSite: 'lax' as const,
     path: '/',
-    expires: expiresAt,
+    ...(remember ? { expires: expiresAt < cap ? expiresAt : cap } : {}),
   };
 }
 
@@ -42,11 +68,16 @@ export interface IssuedSession {
   token: string;
   expiresAt: Date;
   cookieName: string;
+  remember: boolean;
 }
 
-export async function createSession(userId: string, role: Role): Promise<IssuedSession> {
+export async function createSession(
+  userId: string,
+  role: Role,
+  remember = false,
+): Promise<IssuedSession> {
   const token = randomBytes(32).toString('base64url');
-  const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 86_400_000);
+  const expiresAt = new Date(Date.now() + sessionTtlMs(remember));
 
   await db.insert(sessions).values({
     tokenHash: hashToken(token),
@@ -55,7 +86,7 @@ export async function createSession(userId: string, role: Role): Promise<IssuedS
     expiresAt,
   });
 
-  return { token, expiresAt, cookieName: COOKIE_NAMES[role] };
+  return { token, expiresAt, cookieName: COOKIE_NAMES[role], remember };
 }
 
 /**

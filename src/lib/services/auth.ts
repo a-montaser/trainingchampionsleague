@@ -13,6 +13,7 @@ export class LoginFailed extends Error {
   }
 }
 
+
 /**
  * Signs a user in for one site only.
  *
@@ -25,6 +26,7 @@ export async function login(
   email: string,
   password: string,
   expectedRole: Role,
+  remember = false,
 ): Promise<IssuedSession> {
   const normalised = email.trim().toLowerCase();
 
@@ -51,5 +53,6 @@ export async function login(
     throw new LoginFailed('This account has been deactivated. Ask an organiser for help.');
   }
 
-  return createSession(user.id, user.role);
+
+  return createSession(user.id, user.role, remember);
 }

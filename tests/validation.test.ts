@@ -91,7 +91,7 @@ describe('entry validation', () => {
   });
 
   it('accepts an entry with no notes, since only the link is required', () => {
-    const { notes: _notes, ...withoutNotes } = valid;
+    const withoutNotes = { ...valid, notes: undefined };
     expect(validateEntry(withoutNotes, context()).ok).toBe(true);
     expect(validateEntry({ ...valid, notes: '' }, context()).ok).toBe(true);
   });

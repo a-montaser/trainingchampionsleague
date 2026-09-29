@@ -8,6 +8,27 @@
       "when": 1789641556492,
       "tag": "0000_overconfident_riptide",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790170477953,
+      "tag": "0001_melted_banshee",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790244812879,
+      "tag": "0002_minor_the_hand",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790254736545,
+      "tag": "0003_flimsy_susan_delgado",
+      "breakpoints": true
     }
   ]
 }

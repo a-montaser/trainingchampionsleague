@@ -1,26 +1,161 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Colours and type taken from the design reference. One dark theme — not a
+ * light/dark toggle, just the single look the design specifies.
+ */
+@theme {
+  /* Surfaces */
+  --color-canvas: #16181a; /* page background */
+  --color-surface: #25282b; /* cards, menus, table panels */
+  --color-input: #1e2023; /* form fields sit darker than their card */
+
+  /* Text */
+  --color-ink: #f2f2f2; /* primary */
+  --color-label: #bebebe; /* field labels, secondary body */
+  --color-muted: #9a9a9a; /* captions, column headings */
+
+  /* Hairlines, all white at low alpha so they read on any surface */
+  --color-line: rgba(255, 255, 255, 0.08);
+  --color-line-strong: rgba(255, 255, 255, 0.14);
+
+  /* Vodafone red: primary actions */
+  --color-brand: #e60000;
+  --color-brand-dark: #bd0000;
+  --color-brand-tint: rgba(230, 0, 0, 0.12);
+  /* Red is too dark for text on a dark ground; this is the readable tint. */
+  --color-brand-text: #ff6b6b;
+
+  /* Turquoise: the secondary accent used for badges and highlights */
+  --color-accent: #00b0ca;
+  --color-accent-tint: rgba(0, 176, 202, 0.14);
+
+  /* Promotion / relegation */
+  --color-up: #22c55e;
+  --color-up-tint: rgba(34, 197, 94, 0.14);
+  --color-down: #ff6b6b;
+  --color-down-tint: rgba(230, 0, 0, 0.12);
+
+  /* The division cut line */
+  --color-cut: #fecb00;
+
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-outfit), var(--font-manrope), ui-sans-serif, sans-serif;
+
+  --radius-control: 10px;
+  --radius-card: 16px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/*
+ * Light mode overrides the same tokens, so every component follows without
+ * knowing a theme exists. Dark is the default; `data-theme` is set on <html>
+ * before first paint by the script in the root layout.
+ */
+[data-theme='light'] {
+  --color-canvas: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-input: #ffffff;
+
+  --color-ink: #0f1419;
+  --color-label: #3f4a56;
+  --color-muted: #5b6672;
+
+  --color-line: rgba(15, 20, 25, 0.1);
+  --color-line-strong: rgba(15, 20, 25, 0.18);
+
+  /* Red keeps its fill, but text needs the darker shade to stay readable on
+     white — the mirror of why dark mode uses the lighter one. */
+  --color-brand-text: #bd0000;
+  --color-brand-tint: rgba(230, 0, 0, 0.08);
+
+  --color-accent: #007e93;
+  --color-accent-tint: rgba(0, 126, 147, 0.1);
+
+  --color-up: #0a7b3e;
+  --color-up-tint: rgba(10, 123, 62, 0.1);
+  --color-down: #b3261e;
+  --color-down-tint: rgba(179, 38, 30, 0.08);
+
+  --color-cut: #9a7b00;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  -webkit-text-size-adjust: 100%;
+  color-scheme: dark;
+}
+
+html[data-theme='light'] {
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+}
+
+/* Headings are the display face throughout, so pages need no extra class. */
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+/* Tabular figures keep leaderboard columns from jittering between rows. */
+.numeric {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Small upper-case labels: badges, column headings, the brand wordmark. */
+.tracking-label {
+  letter-spacing: 0.07em;
+}
+
+/* Visible focus everywhere — these forms are filled in on phones and by
+   keyboard users alike. */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+/* Browsers give <button> the plain arrow cursor and only <a href> the hand, so
+   half the clickable things on the page read as unclickable. Anything that
+   responds to a click gets the hand; anything switched off says so instead. */
+button,
+summary,
+[role='button'],
+[role='option'],
+[type='button'],
+[type='submit'],
+[type='reset'],
+[type='checkbox'],
+[type='radio'],
+[type='file'] {
+  cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled='true'],
+[type='button']:disabled,
+[type='submit']:disabled {
+  cursor: not-allowed;
+}
+
+/* The date picker's icon is black-on-black in dark mode without this. */
+html:not([data-theme='light']) ::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.6;
+}
+
+/* Rows lift under the cursor; the tint has to flip with the theme. */
+tbody tr {
+  transition: background 0.15s;
+}
+tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+html[data-theme='light'] tbody tr:hover {
+  background: rgba(15, 20, 25, 0.03);
 }

@@ -8,6 +8,7 @@ import type { Actor } from '../auth/guards';
 import { assertAdmin, ForbiddenError, NotFoundError } from '../auth/guards';
 import { generateTemporaryPassword, hashPassword, MIN_PASSWORD_LENGTH } from '../auth/password';
 import { destroyAllSessionsForUser } from '../auth/session';
+import { JOB_ROLES, isJobRole } from '../job-roles';
 import { isValidDateOnly, todayInCairo, type DateOnly } from '../time';
 import { recordAudit } from './audit';
 
@@ -19,6 +20,7 @@ export const registrationSchema = z.object({
     .min(MIN_PASSWORD_LENGTH, `Use at least ${MIN_PASSWORD_LENGTH} characters.`)
     .max(200, 'That password is too long.'),
   teamId: z.uuid('Choose your team.'),
+  jobRole: z.enum(JOB_ROLES, { error: 'Choose your role.' }),
 });
 
 export type RegistrationInput = z.infer<typeof registrationSchema>;
@@ -64,6 +66,7 @@ export async function registerParticipant(input: RegistrationInput): Promise<{ u
         passwordHash: await hashPassword(input.password),
         role: 'participant',
         teamId: team.id,
+        jobRole: input.jobRole,
       })
       .returning({ id: users.id });
 
@@ -92,6 +95,7 @@ export interface UserListRow {
   email: string;
   teamId: string | null;
   teamName: string | null;
+  jobRole: string | null;
   isActive: boolean;
   createdAt: Date;
 }
@@ -116,6 +120,7 @@ export async function listUsers(
       email: users.email,
       teamId: users.teamId,
       teamName: teams.name,
+      jobRole: users.jobRole,
       isActive: users.isActive,
       createdAt: users.createdAt,
     })
@@ -231,4 +236,47 @@ export function countActiveMembersByTeam(exec: Executor = db) {
     .from(users)
     .where(and(eq(users.role, 'participant'), eq(users.isActive, true)))
     .groupBy(users.teamId);
+}
+
+/**
+ * Sets what someone does in the company.
+ *
+ * This is the informational job role, never the `role` column that drives
+ * authorisation — an admin cannot make someone an organiser from here. Passing
+ * `null` clears it.
+ *
+ * It does change who they report to: a lead role reports to the lead manager
+ * rather than to their team's manager.
+ */
+export async function changeUserJobRole(
+  actor: Actor,
+  userId: string,
+  jobRole: string | null,
+): Promise<void> {
+  assertAdmin(actor);
+
+  if (jobRole !== null && !isJobRole(jobRole)) {
+    throw new Error('Choose one of the listed roles.');
+  }
+
+  await db.transaction(async (tx) => {
+    const user = await requireUser(userId, tx);
+    if (user.role !== 'participant') {
+      throw new ForbiddenError('Organiser accounts do not have a company role.');
+    }
+
+    await tx
+      .update(users)
+      .set({ jobRole, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+
+    await recordAudit(tx, {
+      actorId: actor.id,
+      action: 'user.change_job_role',
+      entityType: 'user',
+      entityId: userId,
+      before: { jobRole: user.jobRole },
+      after: { jobRole },
+    });
+  });
 }

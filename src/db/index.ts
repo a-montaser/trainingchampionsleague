@@ -1,38 +1,37 @@
 import 'server-only';
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { Pool } from 'pg';
+import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless';
+import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
+import type { Pool as NeonPool } from '@neondatabase/serverless';
+import type { Pool as TcpPool } from 'pg';
 import { env } from '../env';
+import { createPool, isNeonUrl, type AnyPool } from './driver';
 import * as schema from './schema';
 
 export { schema };
 
 /**
- * One client for both deployment targets: Neon's pooled endpoint in production
- * and a local Postgres in development. Both speak the standard protocol, so a
- * single driver covers them — and unlike Neon's HTTP driver, it supports the
- * interactive transactions that closing a round depends on.
+ * One database handle for both deployment targets. See `driver.ts` for why Neon
+ * goes over a WebSocket rather than plain TCP.
  *
  * Cached on `globalThis` so Next's dev server does not open a new pool on every
- * hot reload.
+ * hot reload, and resolved lazily so services can be imported — and their
+ * authorisation checks exercised — without a database or a populated
+ * environment.
  */
 const globalForDb = globalThis as unknown as {
-  __tclPool?: Pool;
-  __tclDb?: ReturnType<typeof drizzle<typeof schema>>;
+  __tclPool?: AnyPool;
+  __tclDb?: ReturnType<typeof createDb>;
 };
 
 function createDb() {
-  const pool = (globalForDb.__tclPool ??= new Pool({
-    connectionString: env.databaseUrl,
-    max: env.isProduction ? 5 : 10,
-  }));
-  return drizzle(pool, { schema });
+  const url = env.databaseUrl;
+  const pool = (globalForDb.__tclPool ??= createPool(url, env.isProduction ? 5 : 10));
+
+  return isNeonUrl(url)
+    ? drizzleNeon(pool as NeonPool, { schema })
+    : drizzlePg(pool as TcpPool, { schema });
 }
 
-/**
- * Resolved on first use rather than at import time. Services can then be
- * imported — and their authorisation checks exercised — without a database
- * connection or a populated environment.
- */
 export const db = new Proxy({} as ReturnType<typeof createDb>, {
   get(_target, property, receiver) {
     const instance = (globalForDb.__tclDb ??= createDb());

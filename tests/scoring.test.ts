@@ -5,7 +5,10 @@ import {
   computeTeamStandings,
   formatHours,
   formatScore,
+  formatScoreLabel,
   resolveHeadcount,
+  scoreGap,
+  scorePoints,
 } from '@/lib/scoring';
 import type { EntryRow, HeadcountRow, RoundRow, TeamStanding } from '@/lib/scoring/types';
 import {
@@ -55,15 +58,50 @@ describe('display formatting', () => {
     expect(formatHours(1_234)).toBe('20.6');
   });
 
-  it('shows team score as hours per person to 2 decimal places', () => {
-    expect(formatScore(600, 10)).toBe('1.00');
-    expect(formatScore(1_000, 7)).toBe('2.38');
-    expect(formatScore(0, 10)).toBe('0.00');
+  it('shows team score as hours ÷ headcount × 100, as a whole number', () => {
+    expect(formatScore(600, 10)).toBe('100'); // 10 h ÷ 10 people × 100
+    expect(formatScore(1_000, 7)).toBe('238'); // 16.67 h ÷ 7 × 100 = 238.1
+    expect(formatScore(0, 10)).toBe('0');
+  });
+
+  it('labels every on-screen score with points, singular for one', () => {
+    expect(formatScoreLabel(1_431, 10)).toBe('239 points');
+    expect(formatScoreLabel(3, 10)).toBe('1 point');
+    expect(formatScoreLabel(0, 10)).toBe('0 points');
+    expect(formatScoreLabel(600, null)).toBe('0 points');
+  });
+
+  it('rounds to the nearest whole number, with halves rounding up', () => {
+    expect(scorePoints(1_430, 10)).toBe(238); // 238.33
+    expect(scorePoints(1_432, 10)).toBe(239); // 238.67
+    // Exactly 238.5. As a float this is 238.4999…, which Math.round would take
+    // down to 238 — the integer arithmetic gets it right.
+    expect(scorePoints(1_431, 10)).toBe(239);
+    expect(scorePoints(3, 10)).toBe(1); // 0.5 rounds up too
+    expect(scorePoints(2, 10)).toBe(0); // 0.33 rounds down
   });
 
   it('scores a team with no headcount as zero rather than dividing by zero', () => {
-    expect(formatScore(600, null)).toBe('0.00');
-    expect(formatScore(600, 0)).toBe('0.00');
+    expect(formatScore(600, null)).toBe('0');
+    expect(formatScore(600, 0)).toBe('0');
+  });
+
+  it('measures the gap to the cut line between the two displayed scores', () => {
+    const ahead = { totalMinutes: 1_431, headcount: 10 }; // shows 239
+    const behind = { totalMinutes: 600, headcount: 10 }; // shows 100
+    expect(scoreGap(ahead, behind)).toBe(139);
+    expect(scoreGap(behind, ahead)).toBe(139);
+    // Two teams can show the same score while tie-breakers still separate them.
+    expect(scoreGap({ totalMinutes: 1_430, headcount: 10 }, { totalMinutes: 1_429, headcount: 10 })).toBe(0);
+  });
+
+  it('never changes the ranking — the displayed scores sort in rank order', () => {
+    const entries = teams.map((t, i) =>
+      entry({ teamId: t.id, durationMinutes: 137 * (i + 1) + (i % 3) * 11 }),
+    );
+    const list = standings({ entries });
+    const shown = list.map((s) => Number(formatScore(s.totalMinutes, s.headcount)));
+    expect(shown).toEqual([...shown].sort((a, b) => b - a));
   });
 });
 
@@ -112,7 +150,7 @@ describe('team score', () => {
     const mpesa = row(standings({ entries }), 'Mpesa');
     expect(mpesa.totalMinutes).toBe(1_200);
     expect(mpesa.headcount).toBe(10);
-    expect(formatScore(mpesa.totalMinutes, mpesa.headcount)).toBe('2.00');
+    expect(formatScore(mpesa.totalMinutes, mpesa.headcount)).toBe('200');
   });
 
   it('counts an entry against the team the user was in at the time, not their new team', () => {
@@ -163,8 +201,8 @@ describe('headcount history', () => {
     const before = row(standings({ entries, headcounts: withHistory, today: '2026-10-20' }), 'Ireland');
     const after = row(standings({ entries, headcounts: withHistory, today: '2026-11-15' }), 'Ireland');
 
-    expect(formatScore(before.totalMinutes, before.headcount)).toBe('2.00'); // 1200 / 10
-    expect(formatScore(after.totalMinutes, after.headcount)).toBe('1.00'); // 1200 / 20
+    expect(formatScore(before.totalMinutes, before.headcount)).toBe('200'); // 20 h ÷ 10 × 100
+    expect(formatScore(after.totalMinutes, after.headcount)).toBe('100'); // 20 h ÷ 20 × 100
   });
 
   it('freezes a closed round against the headcount in effect on its last day', () => {
@@ -180,7 +218,7 @@ describe('headcount history', () => {
     );
 
     expect(frozen.headcount).toBe(20);
-    expect(formatScore(frozen.totalMinutes, frozen.headcount)).toBe('1.00');
+    expect(formatScore(frozen.totalMinutes, frozen.headcount)).toBe('100');
   });
 });
 
@@ -189,7 +227,7 @@ describe('live divisions', () => {
     const list = standings({ entries: [], today: '2026-10-01' });
 
     expect(list.filter((s) => s.division === 1).map((s) => s.teamName)).toEqual([
-      'Retail 10',
+      'CIT',
       'MVA Germany',
       'Web factory',
       'DE enterprise',
@@ -307,11 +345,11 @@ describe('tie-breakers', () => {
   it('4. breaks a total tie by where the teams stood when the round opened', () => {
     // Nobody has scored, so only the round-start standing separates them.
     const list = standings({ entries: [] });
-    const retail = row(list, 'Retail 10'); // started rank 1
+    const retail = row(list, 'CIT'); // started rank 1
     const uk = row(list, 'UK MVA/Web'); // started rank 6
 
     expect(retail.rankOverall).toBeLessThan(uk.rankOverall);
-    // Alphabetically "Retail 10" would lose to "DE enterprise"; it does not,
+    // Alphabetically "CIT" would lose to "DE enterprise"; it does not,
     // because the round-start rank is checked first.
     expect(retail.rankOverall).toBeLessThan(row(list, 'DE enterprise').rankOverall);
   });

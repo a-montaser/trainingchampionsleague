@@ -11,11 +11,18 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx scripts/seed-bootstrap.ts",
+    "db:seed:demo": "tsx scripts/seed-bootstrap.ts --demo",
+    "db:seed:real": "tsx scripts/seed-bootstrap.ts --real",
+    "admin:create": "tsx scripts/create-admin.ts"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
+    "@neon/config": "^1.7.0",
+    "@neon/env": "^1.4.1",
+    "@neondatabase/serverless": "^1.1.0",
     "@node-rs/argon2": "^2.2.1",
     "date-fns": "^4.4.0",
     "drizzle-orm": "^0.45.2",

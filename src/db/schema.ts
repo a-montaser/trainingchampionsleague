@@ -14,8 +14,11 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { JOB_ROLES } from '../lib/job-roles';
 
 export const roleEnum = pgEnum('role', ['participant', 'admin']);
+/** What the person does in the company. Never used for authorisation. */
+export const jobRoleEnum = pgEnum('job_role', JOB_ROLES);
 export const roundStatusEnum = pgEnum('round_status', ['scheduled', 'open', 'closed']);
 export const entryStatusEnum = pgEnum('entry_status', ['counted', 'pending', 'rejected']);
 export const movementEnum = pgEnum('movement', ['promoted', 'relegated', 'stayed']);
@@ -23,10 +26,27 @@ export const movementEnum = pgEnum('movement', ['promoted', 'relegated', 'stayed
 const id = () => uuid('id').primaryKey().defaultRandom();
 const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
 
+/**
+ * The people managers teams roll up to. Editable by admins, so the org chart
+ * can change without a code release.
+ */
+export const peopleManagers = pgTable('people_managers', {
+  id: id(),
+  name: text('name').notNull().unique(),
+  /**
+   * Exactly one manager is the lead: everyone in a lead job role reports to
+   * them whatever their team. Enforced in the service, not by a constraint.
+   */
+  isLead: boolean('is_lead').notNull().default(false),
+  createdAt: createdAt(),
+});
+
 export const teams = pgTable('teams', {
   id: id(),
   name: text('name').notNull().unique(),
   slug: text('slug').notNull().unique(),
+  /** Null when no manager owns this team yet. */
+  managerId: uuid('manager_id').references(() => peopleManagers.id, { onDelete: 'set null' }),
   createdAt: createdAt(),
 });
 
@@ -58,8 +78,16 @@ export const users = pgTable(
     email: text('email').notNull(),
     passwordHash: text('password_hash').notNull(),
     role: roleEnum('role').notNull().default('participant'),
+    /** Self-selected at registration; informational only. */
+    jobRole: jobRoleEnum('job_role'),
     teamId: uuid('team_id').references(() => teams.id, { onDelete: 'restrict' }),
     isActive: boolean('is_active').notNull().default(true),
+    /**
+     * Unused. Left in place from a removed email-verification feature so this
+     * schema still matches the live database; dropping it would generate a
+     * destructive migration for no gain. Nothing reads it.
+     */
+    emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -96,6 +124,25 @@ export const sessions = pgTable(
   },
   (t) => [index('sessions_user_idx').on(t.userId)],
 );
+
+/**
+ * Unused. Left in place from a removed email-verification feature so this
+ * schema still matches the live database. The table is empty and nothing reads
+ * or writes it.
+ */
+export const emailVerificationCodes = pgTable('email_verification_codes', {
+  id: id(),
+  userId: uuid('user_id')
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  codeHash: text('code_hash').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  /** Wrong guesses, so a code cannot be brute-forced within its 10 minutes. */
+  attempts: integer('attempts').notNull().default(0),
+  sentAt: timestamp('sent_at', { withTimezone: true }).notNull().defaultNow(),
+  createdAt: createdAt(),
+});
 
 export const rounds = pgTable(
   'rounds',

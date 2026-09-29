@@ -330,3 +330,21 @@ export async function exportEntries(
     .where(where.length ? and(...where) : undefined)
     .orderBy(desc(entries.completedOn));
 }
+
+/**
+ * Loads one entry for editing. Scoped to the actor, so a participant asking for
+ * another user's id gets "not found" rather than their data.
+ */
+export async function getEntryForEdit(actor: Actor, entryId: string): Promise<EntryView> {
+  const [row] = await db
+    .select(entryView)
+    .from(entries)
+    .innerJoin(users, eq(users.id, entries.userId))
+    .leftJoin(teams, eq(teams.id, entries.teamId))
+    .where(eq(entries.id, entryId))
+    .limit(1);
+
+  if (!row) throw new NotFoundError('That entry does not exist.');
+  assertCanMutateEntry(actor, row.userId);
+  return row;
+}

@@ -14,7 +14,7 @@ export const TEAM_NAMES = [
   'OneApp',
   'Mpesa',
   'DE portals',
-  'Retail 10',
+  'CIT',
   'MVA Germany',
   'Web factory',
   'DE enterprise',
@@ -22,7 +22,7 @@ export const TEAM_NAMES = [
 ] as const;
 
 export const STARTING_DIVISION_1 = [
-  'Retail 10',
+  'CIT',
   'MVA Germany',
   'Web factory',
   'DE enterprise',

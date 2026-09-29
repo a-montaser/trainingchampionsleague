@@ -16,10 +16,13 @@ import {
   type RoundClosePreview,
   type RoundRow,
 } from '../scoring';
-import { isWithin, todayInCairo, type DateOnly } from '../time';
+import { planRounds } from '../scoring/schedule';
+import { isWithin, todayInCairo } from '../time';
 import { recordAudit } from './audit';
 import { getSettings } from './settings';
 import { loadIndividualStandings, loadTeamStandings } from './standings';
+
+export { planRounds };
 
 export async function listRounds(exec: Executor = db): Promise<RoundRow[]> {
   return exec
@@ -67,50 +70,6 @@ export async function getCurrentRound(exec: Executor = db): Promise<RoundRow | n
     all.find((r) => r.status === 'open') ??
     all[all.length - 1]
   );
-}
-
-/**
- * Generates the round schedule from the tournament dates. Rounds are equal
- * calendar months; the last one absorbs any remainder so it ends exactly on the
- * tournament's final day.
- */
-export function planRounds(
-  start: DateOnly,
-  end: DateOnly,
-  lengthMonths: number,
-): Array<{ index: number; name: string; startsOn: DateOnly; endsOn: DateOnly }> {
-  if (lengthMonths < 1) throw new Error('Round length must be at least 1 month.');
-  if (end < start) throw new Error('The tournament must end after it starts.');
-
-  const plan: Array<{ index: number; name: string; startsOn: DateOnly; endsOn: DateOnly }> = [];
-  let cursor = start;
-  let index = 1;
-
-  while (cursor <= end) {
-    const [y, m, d] = cursor.split('-').map(Number);
-    // The day before the same day-of-month, `lengthMonths` later.
-    const nextStart = new Date(Date.UTC(y, m - 1 + lengthMonths, d));
-    const lastDay = new Date(nextStart.getTime() - 86_400_000).toISOString().slice(0, 10);
-    const endsOn = lastDay > end ? end : lastDay;
-
-    plan.push({ index, name: `Round ${index}`, startsOn: cursor, endsOn });
-
-    cursor = new Date(Date.parse(endsOn + 'T00:00:00Z') + 86_400_000).toISOString().slice(0, 10);
-    index += 1;
-  }
-
-  // Never leave a stub final round: fold anything shorter than half a round
-  // into the one before it.
-  if (plan.length > 1) {
-    const last = plan[plan.length - 1];
-    const lastDays = Date.parse(last.endsOn) - Date.parse(last.startsOn);
-    if (lastDays < 14 * 86_400_000) {
-      plan[plan.length - 2].endsOn = last.endsOn;
-      plan.pop();
-    }
-  }
-
-  return plan;
 }
 
 export async function generateSchedule(actor: Actor, lengthMonths = 3): Promise<RoundRow[]> {
