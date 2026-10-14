@@ -1,12 +1,7 @@
 import { Card, EmptyState, Table, TableScroll, Td, Th, cx } from '@/components/ui';
 import { requireParticipant } from '@/lib/auth/dal';
 import { formatHours, formatScoreLabel } from '@/lib/scoring';
-import {
-  findUnmanagedTeams,
-  loadManagerFor,
-  loadManagerStandings,
-} from '@/lib/services/managers';
-import { getLeadManagerName } from '@/lib/services/people-managers';
+import { loadManagerFor, loadManagerStandings } from '@/lib/services/managers';
 import { getCurrentRound, listRounds } from '@/lib/services/rounds';
 import { ALL_ROUNDS } from '../leaderboard/constants';
 import { RoundFilter } from './RoundFilter';
@@ -19,12 +14,7 @@ export default async function ManagersPage({ searchParams }: PageProps<'/manager
   const params = await searchParams;
   const roundParam = typeof params.round === 'string' ? params.round : '';
 
-  const [rounds, currentRound, unmanaged, leadManager] = await Promise.all([
-    listRounds(),
-    getCurrentRound(),
-    findUnmanagedTeams(),
-    getLeadManagerName(),
-  ]);
+  const [rounds, currentRound] = await Promise.all([listRounds(), getCurrentRound()]);
 
   const selectedRound =
     roundParam === ALL_ROUNDS
@@ -101,28 +91,6 @@ export default async function ManagersPage({ searchParams }: PageProps<'/manager
           </TableScroll>
         )}
       </Card>
-
-      <div className="rounded-lg border border-line bg-surface px-4 py-3 text-sm text-muted">
-        <p className="font-medium text-ink">How this is worked out</p>
-        <ul className="mt-1.5 list-disc space-y-1 pl-4">
-          <li>
-            Score = hours ÷ people under that manager × 100 — the same formula as the team
-            tables, using the number of people registered under them.
-          </li>
-          <li>
-            Product Owners and UI/UX Designers roll up to the manager who owns the team they chose.
-          </li>
-          {leadManager && (
-            <li>Product Leads/Managers and Design Leads roll up to {leadManager}.</li>
-          )}
-          {unmanaged.length > 0 && (
-            <li>
-              {unmanaged.join(', ')} {unmanaged.length === 1 ? 'has' : 'have'} no manager
-              set, so {unmanaged.length === 1 ? 'its' : 'their'} people are not counted here yet.
-            </li>
-          )}
-        </ul>
-      </div>
     </div>
   );
 }
