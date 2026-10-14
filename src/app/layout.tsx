@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Manrope, Outfit } from 'next/font/google';
-import { ThemeToggle, THEME_STORAGE_KEY } from '@/components/ThemeToggle';
+import { cookies } from 'next/headers';
+import { ThemeToggle, THEME_COOKIE_KEY } from '@/components/ThemeToggle';
 import './globals.css';
 
 // Self-hosted by Next at build time, so there is no request to Google at
@@ -34,28 +35,21 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-/**
- * Applies the saved theme before the page paints. Inline and synchronous on
- * purpose: doing this in React would render one frame in the wrong colours
- * first. Dark is the default.
- */
-const APPLY_THEME = `try{var t=localStorage.getItem('${THEME_STORAGE_KEY}');document.documentElement.dataset.theme=t==='light'?'light':'dark'}catch(e){document.documentElement.dataset.theme='dark'}`;
+export default async function RootLayout({ children }: LayoutProps<'/'>) {
+  // Read on the server so the colours are correct in the first byte of HTML,
+  // with no inline script and no flash. Dark is the default.
+  const theme =
+    (await cookies()).get(THEME_COOKIE_KEY)?.value === 'light' ? 'light' : 'dark';
 
-export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    // The theme attribute is set by the script above, so the server's markup
-    // and the client's first render differ by design.
     <html
       lang="en"
+      data-theme={theme}
       className={`${outfit.variable} ${manrope.variable} h-full antialiased`}
-      suppressHydrationWarning
     >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: APPLY_THEME }} />
-      </head>
       <body className="flex min-h-full flex-col">
         {children}
-        <ThemeToggle />
+        <ThemeToggle initialTheme={theme} />
       </body>
     </html>
   );

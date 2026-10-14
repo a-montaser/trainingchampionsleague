@@ -3,16 +3,18 @@
 import { useSyncExternalStore } from 'react';
 import { cx } from './ui';
 
-export const THEME_STORAGE_KEY = 'tcl-theme';
+export const THEME_COOKIE_KEY = 'tcl-theme';
 
-type Theme = 'dark' | 'light';
+/** A year, so a choice sticks until it is changed. */
+const THEME_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+export type Theme = 'dark' | 'light';
 
 /**
  * Light/dark switch, pinned bottom-right on every screen.
  *
- * The theme itself is applied by the inline script in the root layout, which
- * runs before first paint. This component only reads what that script set and
- * writes the choice back, so there is never a flash of the wrong colours.
+ * The choice lives in a cookie so the server can put it on <html> before the
+ * first byte, which is why there is never a flash of the wrong colours.
  */
 /** The <html> attribute is the source of truth, so nothing can drift from it. */
 function subscribe(onChange: () => void) {
@@ -27,18 +29,13 @@ function subscribe(onChange: () => void) {
 const readTheme = (): Theme =>
   document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
 
-const serverTheme = (): Theme => 'dark';
-
-export function ThemeToggle() {
-  const theme = useSyncExternalStore(subscribe, readTheme, serverTheme);
+export function ThemeToggle({ initialTheme }: { initialTheme: Theme }) {
+  const theme = useSyncExternalStore(subscribe, readTheme, () => initialTheme);
 
   function choose(next: Theme) {
     document.documentElement.dataset.theme = next;
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, next);
-    } catch {
-      // Private browsing can refuse storage; the theme still applies for now.
-    }
+    const secure = location.protocol === 'https:' ? '; secure' : '';
+    document.cookie = `${THEME_COOKIE_KEY}=${next}; path=/; max-age=${THEME_COOKIE_MAX_AGE}; samesite=lax${secure}`;
   }
 
   const isDark = theme === 'dark';
