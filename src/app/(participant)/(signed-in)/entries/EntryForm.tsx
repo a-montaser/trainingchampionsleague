@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useActionState } from 'react';
+import { PlatformField } from '@/components/PlatformField';
 import { SubmitButton } from '@/components/SubmitButton';
 import { Alert, Field, Input, Textarea } from '@/components/ui';
 import type { EntryFormState } from './entry-actions';
@@ -12,6 +13,8 @@ export interface EntryFormValues {
   hours: number;
   minutes: number;
   trainingUrl: string;
+  platform: string;
+  platformOther: string;
   notes: string;
 }
 
@@ -111,12 +114,18 @@ export function EntryForm({
         )}
       </fieldset>
 
+      <PlatformField
+        defaultPlatform={initial?.platform}
+        defaultOther={initial?.platformOther}
+        error={state.errors?.platform}
+        otherError={state.errors?.platformOther}
+      />
+
       <Field
-        label="Link to the training"
+        label="Link to the training (optional)"
         htmlFor="trainingUrl"
-        hint="Paste the course or certificate link. This is required."
+        hint="The course or certificate link, if there is one."
         error={state.errors?.trainingUrl}
-        required
       >
         <Input
           id="trainingUrl"
@@ -125,7 +134,6 @@ export function EntryForm({
           inputMode="url"
           defaultValue={initial?.trainingUrl}
           placeholder="https://…"
-          required
         />
       </Field>
 

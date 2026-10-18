@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { DateOnly } from '../time';
 import { isValidDateOnly, isWithin } from '../time';
 import type { RoundRow } from '../scoring/types';
+import { MAX_PLATFORM_OTHER_LENGTH, PLATFORM_VALUES } from '../platforms';
 
 export const MAX_URL_LENGTH = 2048;
 export const MAX_NAME_LENGTH = 200;
@@ -26,15 +27,33 @@ export const entryInputSchema = z.object({
     .number()
     .int('Enter whole minutes.')
     .min(1, 'A training must be longer than 0 minutes.'),
+  /** Optional, but when given it must be http(s) — never a `javascript:` URL. */
   trainingUrl: z
     .url({ protocol: /^https?$/, error: 'Enter a link starting with http:// or https://' })
-    .max(MAX_URL_LENGTH, 'That link is too long.'),
+    .max(MAX_URL_LENGTH, 'That link is too long.')
+    .optional()
+    .or(z.literal('')),
+  platform: z.enum(PLATFORM_VALUES, { error: 'Choose the platform you took it on.' }),
+  platformOther: z
+    .string()
+    .trim()
+    .max(MAX_PLATFORM_OTHER_LENGTH, `Keep the platform under ${MAX_PLATFORM_OTHER_LENGTH} characters.`)
+    .optional()
+    .or(z.literal('')),
   notes: z
     .string()
     .trim()
     .max(MAX_NOTES_LENGTH, `Keep notes under ${MAX_NOTES_LENGTH} characters.`)
     .optional()
     .or(z.literal('')),
+}).superRefine((value, ctx) => {
+  if (value.platform === 'other' && !value.platformOther) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['platformOther'],
+      message: 'Enter the name of the platform.',
+    });
+  }
 });
 
 export type EntryInput = z.infer<typeof entryInputSchema>;

@@ -196,8 +196,15 @@ export const entries = pgTable(
     trainingName: text('training_name').notNull(),
     completedOn: date('completed_on', { mode: 'string' }).notNull(),
     durationMinutes: integer('duration_minutes').notNull(),
-    /** Required link to the training itself. */
-    trainingUrl: text('training_url').notNull(),
+    /** Optional link to the training itself. */
+    trainingUrl: text('training_url'),
+    /**
+     * One of the values in `src/lib/platforms.ts`. Null only for entries logged
+     * before the field existed; new and edited entries always have one.
+     */
+    platform: text('platform'),
+    /** The platform's name when `platform` is "other". */
+    platformOther: text('platform_other'),
     notes: text('notes'),
     status: entryStatusEnum('status').notNull().default('counted'),
     reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, {

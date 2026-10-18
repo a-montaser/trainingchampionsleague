@@ -321,6 +321,8 @@ export async function updateEntryAction(_prev: ActionState, formData: FormData) 
         completedOn: String(formData.get('completedOn') ?? ''),
         durationMinutes: hours * 60 + minutes,
         trainingUrl: String(formData.get('trainingUrl') ?? '').trim(),
+        platform: String(formData.get('platform') ?? ''),
+        platformOther: String(formData.get('platformOther') ?? ''),
         notes: String(formData.get('notes') ?? ''),
       });
       return 'Entry updated.';

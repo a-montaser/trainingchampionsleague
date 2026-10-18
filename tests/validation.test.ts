@@ -25,6 +25,7 @@ const valid = {
   completedOn: '2026-11-10',
   durationMinutes: 90,
   trainingUrl: 'https://learn.example.com/secure-coding',
+  platform: 'udemy',
   notes: 'Module 3',
 };
 
@@ -74,10 +75,9 @@ describe('entry validation', () => {
     if (!capped.ok) expect(capped.errors.durationMinutes).toMatch(/8\.0 hours/);
   });
 
-  it('requires a link to the training', () => {
-    const missing = validateEntry({ ...valid, trainingUrl: '' }, context());
-    expect(missing.ok).toBe(false);
-    if (!missing.ok) expect(missing.errors.trainingUrl).toBeTruthy();
+  it('makes the link optional, but rejects anything that is not an http(s) link', () => {
+    expect(validateEntry({ ...valid, trainingUrl: '' }, context()).ok).toBe(true);
+    expect(validateEntry({ ...valid, trainingUrl: undefined }, context()).ok).toBe(true);
 
     const notAUrl = validateEntry({ ...valid, trainingUrl: 'my intranet page' }, context());
     expect(notAUrl.ok).toBe(false);
@@ -90,7 +90,24 @@ describe('entry validation', () => {
     expect(dangerous.ok).toBe(false);
   });
 
-  it('accepts an entry with no notes, since only the link is required', () => {
+  it('requires a platform from the list', () => {
+    const missing = validateEntry({ ...valid, platform: '' }, context());
+    expect(missing.ok).toBe(false);
+    if (!missing.ok) expect(missing.errors.platform).toBeTruthy();
+
+    expect(validateEntry({ ...valid, platform: 'coursera' }, context()).ok).toBe(false);
+  });
+
+  it('requires a name when the platform is "Other"', () => {
+    const unnamed = validateEntry({ ...valid, platform: 'other', platformOther: '  ' }, context());
+    expect(unnamed.ok).toBe(false);
+    if (!unnamed.ok) expect(unnamed.errors.platformOther).toBeTruthy();
+
+    const named = validateEntry({ ...valid, platform: 'other', platformOther: 'Coursera' }, context());
+    expect(named.ok).toBe(true);
+  });
+
+  it('accepts an entry with no notes, since notes are optional', () => {
     const withoutNotes = { ...valid, notes: undefined };
     expect(validateEntry(withoutNotes, context()).ok).toBe(true);
     expect(validateEntry({ ...valid, notes: '' }, context()).ok).toBe(true);
@@ -125,7 +142,13 @@ describe('entry validation', () => {
 
   it('reports which fields failed rather than only the first', () => {
     const result = validateEntry(
-      { trainingName: '', completedOn: 'not-a-date', durationMinutes: 0, trainingUrl: 'nope' },
+      {
+        trainingName: '',
+        completedOn: 'not-a-date',
+        durationMinutes: 0,
+        trainingUrl: 'nope',
+        platform: '',
+      },
       context(),
     );
     expect(result.ok).toBe(false);
@@ -133,6 +156,7 @@ describe('entry validation', () => {
       expect(Object.keys(result.errors).sort()).toEqual([
         'completedOn',
         'durationMinutes',
+        'platform',
         'trainingName',
         'trainingUrl',
       ]);

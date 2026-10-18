@@ -1,6 +1,7 @@
 import { requireAdminApi } from '@/lib/auth/dal';
 import { AuthError } from '@/lib/auth/guards';
 import { csvResponse, toCsv, type CsvRow } from '@/lib/csv';
+import { formatPlatform } from '@/lib/platforms';
 import { formatHours, scorePoints } from '@/lib/scoring';
 import { exportEntries } from '@/lib/services/entries';
 import { getCurrentRound, getRound, listRounds } from '@/lib/services/rounds';
@@ -42,7 +43,8 @@ export async function GET(request: Request, context: RouteContext<'/api/admin/ex
         Team: entry.teamName ?? '',
         Round: entry.roundId ? (roundName.get(entry.roundId) ?? '') : '',
         Training: entry.trainingName,
-        Link: entry.trainingUrl,
+        Platform: formatPlatform(entry.platform, entry.platformOther),
+        Link: entry.trainingUrl ?? '',
         Minutes: entry.durationMinutes,
         Hours: formatHours(entry.durationMinutes),
         Status: entry.status,
@@ -55,6 +57,7 @@ export async function GET(request: Request, context: RouteContext<'/api/admin/ex
         'Team',
         'Round',
         'Training',
+        'Platform',
         'Link',
         'Minutes',
         'Hours',

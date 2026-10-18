@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { formatPlatform } from '@/lib/platforms';
 import { SubmitButton } from '@/components/SubmitButton';
 import {
   Alert,
@@ -87,14 +88,23 @@ export default async function MyEntriesPage({ searchParams }: PageProps<'/entrie
                   return (
                     <tr key={entry.id}>
                       <Td>
-                        <a
-                          href={entry.trainingUrl}
-                          target="_blank"
-                          rel="noopener noreferrer nofollow"
-                          className="font-medium text-brand-text underline underline-offset-2"
-                        >
-                          {entry.trainingName}
-                        </a>
+                        {entry.trainingUrl ? (
+                          <a
+                            href={entry.trainingUrl}
+                            target="_blank"
+                            rel="noopener noreferrer nofollow"
+                            className="font-medium text-brand-text underline underline-offset-2"
+                          >
+                            {entry.trainingName}
+                          </a>
+                        ) : (
+                          <span className="font-medium">{entry.trainingName}</span>
+                        )}
+                        {entry.platform && (
+                          <p className="mt-0.5 text-xs text-muted">
+                            {formatPlatform(entry.platform, entry.platformOther)}
+                          </p>
+                        )}
                         {entry.notes && (
                           <p className="mt-0.5 max-w-xs truncate text-xs text-muted">
                             {entry.notes}

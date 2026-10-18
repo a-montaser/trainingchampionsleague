@@ -12,7 +12,9 @@ import {
   Textarea,
   cx,
 } from '@/components/ui';
+import { PlatformField } from '@/components/PlatformField';
 import { requireAdmin } from '@/lib/auth/dal';
+import { formatPlatform } from '@/lib/platforms';
 import { formatHours, splitDuration } from '@/lib/scoring';
 import type { EntryStatus } from '@/lib/scoring/types';
 import { findFlaggedDays, listAllEntries } from '@/lib/services/entries';
@@ -110,14 +112,23 @@ export default async function AdminEntriesPage({ searchParams }: PageProps<'/adm
                         <span className="mt-0.5 block text-xs text-muted">{entry.teamName}</span>
                       </Td>
                       <Td>
-                        <a
-                          href={entry.trainingUrl}
-                          target="_blank"
-                          rel="noopener noreferrer nofollow"
-                          className="font-medium text-brand-text underline underline-offset-2"
-                        >
-                          {entry.trainingName}
-                        </a>
+                        {entry.trainingUrl ? (
+                          <a
+                            href={entry.trainingUrl}
+                            target="_blank"
+                            rel="noopener noreferrer nofollow"
+                            className="font-medium text-brand-text underline underline-offset-2"
+                          >
+                            {entry.trainingName}
+                          </a>
+                        ) : (
+                          <span className="font-medium">{entry.trainingName}</span>
+                        )}
+                        {entry.platform && (
+                          <span className="mt-0.5 block text-xs text-muted">
+                            {formatPlatform(entry.platform, entry.platformOther)}
+                          </span>
+                        )}
                         {entry.notes && (
                           <span className="mt-0.5 block max-w-xs truncate text-xs text-muted">
                             {entry.notes}
@@ -181,13 +192,17 @@ export default async function AdminEntriesPage({ searchParams }: PageProps<'/adm
                                   />
                                 </Field>
                               </div>
-                              <Field label="Link" htmlFor={`url-${entry.id}`} required>
+                              <PlatformField
+                                idPrefix={`${entry.id}-`}
+                                defaultPlatform={entry.platform ?? ''}
+                                defaultOther={entry.platformOther ?? ''}
+                              />
+                              <Field label="Link (optional)" htmlFor={`url-${entry.id}`}>
                                 <Input
                                   id={`url-${entry.id}`}
                                   name="trainingUrl"
                                   type="url"
-                                  defaultValue={entry.trainingUrl}
-                                  required
+                                  defaultValue={entry.trainingUrl ?? ''}
                                 />
                               </Field>
                               <Field label="Notes" htmlFor={`notes-${entry.id}`}>

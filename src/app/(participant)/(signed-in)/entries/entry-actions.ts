@@ -27,6 +27,8 @@ function readDraft(formData: FormData): EntryDraft {
     durationMinutes:
       (Number.isFinite(hours) ? hours : 0) * 60 + (Number.isFinite(minutes) ? minutes : 0),
     trainingUrl: String(formData.get('trainingUrl') ?? '').trim(),
+    platform: String(formData.get('platform') ?? ''),
+    platformOther: String(formData.get('platformOther') ?? ''),
     notes: String(formData.get('notes') ?? ''),
   };
 }

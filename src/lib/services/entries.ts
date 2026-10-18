@@ -15,6 +15,7 @@ import { todayInCairo } from '../time';
 import {
   canParticipantMutateEntry,
   validateEntry,
+  type EntryInput,
   type EntryValidationContext,
   type FieldErrors,
 } from '../validation/entry';
@@ -51,7 +52,9 @@ export interface EntryDraft {
   trainingName: string;
   completedOn: string;
   durationMinutes: number;
-  trainingUrl: string;
+  trainingUrl?: string;
+  platform: string;
+  platformOther?: string;
   notes?: string;
 }
 
@@ -77,7 +80,7 @@ export async function createEntry(actor: Actor, draft: EntryDraft): Promise<{ id
         trainingName: result.value.trainingName,
         completedOn: result.value.completedOn,
         durationMinutes: result.value.durationMinutes,
-        trainingUrl: result.value.trainingUrl,
+        ...storedLinkAndPlatform(result.value),
         notes: result.value.notes || null,
         // With approval switched off, an entry counts the moment it is saved.
         status: settings.approvalRequired ? 'pending' : 'counted',
@@ -86,6 +89,15 @@ export async function createEntry(actor: Actor, draft: EntryDraft): Promise<{ id
 
     return created;
   });
+}
+
+/** Blank optional fields are stored as null; the "other" name only with "other". */
+function storedLinkAndPlatform(value: EntryInput) {
+  return {
+    trainingUrl: value.trainingUrl || null,
+    platform: value.platform,
+    platformOther: value.platform === 'other' ? value.platformOther || null : null,
+  };
 }
 
 async function loadEntry(entryId: string, exec: Executor) {
@@ -125,7 +137,7 @@ export async function updateEntry(
         trainingName: result.value.trainingName,
         completedOn: result.value.completedOn,
         durationMinutes: result.value.durationMinutes,
-        trainingUrl: result.value.trainingUrl,
+        ...storedLinkAndPlatform(result.value),
         notes: result.value.notes || null,
         roundId: result.roundId,
         updatedAt: new Date(),
@@ -180,7 +192,9 @@ export interface EntryView {
   teamName: string | null;
   roundId: string | null;
   trainingName: string;
-  trainingUrl: string;
+  trainingUrl: string | null;
+  platform: string | null;
+  platformOther: string | null;
   notes: string | null;
   completedOn: string;
   durationMinutes: number;
@@ -197,6 +211,8 @@ const entryView = {
   roundId: entries.roundId,
   trainingName: entries.trainingName,
   trainingUrl: entries.trainingUrl,
+  platform: entries.platform,
+  platformOther: entries.platformOther,
   notes: entries.notes,
   completedOn: entries.completedOn,
   durationMinutes: entries.durationMinutes,

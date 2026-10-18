@@ -57,7 +57,9 @@ export default async function EditEntryPage({ params }: PageProps<'/entries/[id]
                 completedOn: entry.completedOn,
                 hours: duration.hours,
                 minutes: duration.minutes,
-                trainingUrl: entry.trainingUrl,
+                trainingUrl: entry.trainingUrl ?? '',
+                platform: entry.platform ?? '',
+                platformOther: entry.platformOther ?? '',
                 notes: entry.notes ?? '',
               }}
             />
