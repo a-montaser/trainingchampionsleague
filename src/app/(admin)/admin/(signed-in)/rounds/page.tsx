@@ -109,6 +109,12 @@ export default async function AdminRoundsPage() {
               action={generateScheduleAction}
               submitLabel="Generate rounds"
               variant="secondary"
+              confirm={{
+                title: 'Replace the round schedule?',
+                message:
+                  'Every existing round is deleted and recreated from the tournament dates, including their start and end dates and starting divisions.',
+                confirmLabel: 'Replace schedule',
+              }}
             >
               <Field
                 label="Round length in months"

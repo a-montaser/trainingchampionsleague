@@ -105,6 +105,12 @@ export default async function AdminUsersPage({ searchParams }: PageProps<'/admin
                 action={resetPasswordAction}
                 submitLabel="Reset password"
                 variant="secondary"
+                confirm={{
+                  title: `Reset ${user.fullName}'s password?`,
+                  message:
+                    'Their current password stops working and they are signed out everywhere. You will see a temporary password once, to pass on to them.',
+                  confirmLabel: 'Reset password',
+                }}
               >
                 <input type="hidden" name="userId" value={user.id} />
                 <p className="text-xs text-muted">
@@ -116,6 +122,16 @@ export default async function AdminUsersPage({ searchParams }: PageProps<'/admin
                 action={setUserActiveAction}
                 submitLabel={user.isActive ? 'Deactivate' : 'Reactivate'}
                 variant={user.isActive ? 'danger' : 'secondary'}
+                confirm={
+                  user.isActive
+                    ? {
+                        title: `Deactivate ${user.fullName}?`,
+                        message:
+                          'They are signed out and cannot sign in until reactivated. Their logged hours still count for their team.',
+                        confirmLabel: 'Deactivate',
+                      }
+                    : undefined
+                }
               >
                 <input type="hidden" name="userId" value={user.id} />
                 <input type="hidden" name="isActive" value={user.isActive ? 'no' : 'yes'} />

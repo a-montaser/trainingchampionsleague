@@ -103,7 +103,7 @@ export async function deleteTeamAction(_prev: ActionState, formData: FormData) {
   const teamId = String(formData.get('teamId') ?? '');
 
   if (formData.get('confirm') !== 'yes') {
-    return { error: 'Tick the confirmation box to delete the team.' };
+    return { error: 'Confirm to delete the team.' };
   }
 
   return run(
@@ -161,7 +161,7 @@ export async function deleteManagerAction(_prev: ActionState, formData: FormData
   const managerId = String(formData.get('managerId') ?? '');
 
   if (formData.get('confirm') !== 'yes') {
-    return { error: 'Tick Confirm to remove this manager.' };
+    return { error: 'Confirm to remove this manager.' };
   }
 
   return run(() => deletePeopleManager(actor, managerId), MANAGER_VIEWS);
@@ -214,7 +214,7 @@ export async function closeRoundAction(_prev: ActionState, formData: FormData) {
   const roundId = String(formData.get('roundId') ?? '');
 
   if (formData.get('confirm') !== 'yes') {
-    return { error: 'Tick the confirmation box to close the round.' };
+    return { error: 'Confirm to close the round.' };
   }
 
   const result = await run(
@@ -235,7 +235,7 @@ export async function recalculateRoundAction(_prev: ActionState, formData: FormD
   const roundId = String(formData.get('roundId') ?? '');
 
   if (formData.get('confirm') !== 'yes') {
-    return { error: 'Tick the confirmation box to rewrite the frozen results.' };
+    return { error: 'Confirm to rewrite the frozen results.' };
   }
 
   return run(

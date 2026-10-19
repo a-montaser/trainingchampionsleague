@@ -1,4 +1,4 @@
-import { Card, CardBody, Checkbox, Field, Input, Table, TableScroll, Td, Th } from '@/components/ui';
+import { Card, CardBody, Field, Input, Table, TableScroll, Td, Th } from '@/components/ui';
 import { requireAdmin } from '@/lib/auth/dal';
 import { getHeadcountHistory, getTeamUsage, listTeams } from '@/lib/services/teams';
 import { whyTeamCannotBeDeleted } from '@/lib/team-deletion';
@@ -129,14 +129,21 @@ export default async function AdminTeamsPage() {
                   {blockedReason ? (
                     <p className="text-sm text-muted">{blockedReason}</p>
                   ) : (
-                    <ActionForm action={deleteTeamAction} submitLabel="Delete team" variant="danger">
+                    <ActionForm
+                      action={deleteTeamAction}
+                      submitLabel="Delete team"
+                      variant="danger"
+                      confirm={{
+                        title: `Delete ${team.name}?`,
+                        message:
+                          'The team is removed permanently. This is only possible because nothing depends on it, and it is recorded in the audit log.',
+                        confirmLabel: 'Delete team',
+                      }}
+                    >
                       <input type="hidden" name="teamId" value={team.id} />
-                      <Checkbox
-                        name="confirm"
-                        value="yes"
-                        label={`Delete ${team.name} permanently`}
-                        hint="Only possible because nothing depends on it. Recorded in the audit log."
-                      />
+                      <p className="text-xs text-muted">
+                        Only possible because nothing depends on it. Recorded in the audit log.
+                      </p>
                     </ActionForm>
                   )}
                 </div>

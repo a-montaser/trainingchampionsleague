@@ -3,7 +3,6 @@ import {
   Alert,
   Card,
   CardBody,
-  Checkbox,
   MovementBadge,
   Table,
   TableScroll,
@@ -131,28 +130,33 @@ export default async function AdminRoundPage({
                 submitLabel="Recalculate and overwrite"
                 pendingLabel="Recalculating…"
                 variant="danger"
+                confirm={{
+                  title: `Recalculate ${round.name}?`,
+                  message:
+                    'This rewrites the frozen results with the current entries and headcounts. The old values are kept in the audit log.',
+                  confirmLabel: 'Recalculate and overwrite',
+                }}
               >
                 <input type="hidden" name="roundId" value={round.id} />
-                <Checkbox
-                  name="confirm"
-                  value="yes"
-                  label="I understand this rewrites the frozen results"
-                  hint="The old values are kept in the audit log."
-                />
+                <p className="text-xs text-muted">The old values are kept in the audit log.</p>
               </ActionForm>
             ) : (
               <ActionForm
                 action={closeRoundAction}
                 submitLabel="Close round"
                 pendingLabel="Closing…"
+                confirm={{
+                  title: `Close ${round.name}?`,
+                  message:
+                    'The standings above are frozen as the final results, and participants can no longer add or edit trainings dated in this round. This cannot be undone.',
+                  confirmLabel: 'Close round',
+                }}
               >
                 <input type="hidden" name="roundId" value={round.id} />
-                <Checkbox
-                  name="confirm"
-                  value="yes"
-                  label="I have checked the standings above"
-                  hint="Participants can no longer add or edit entries dated in this round."
-                />
+                <p className="text-xs text-muted">
+                  Check the standings above first. Participants can no longer add or edit entries
+                  dated in this round.
+                </p>
               </ActionForm>
             )}
           </CardBody>

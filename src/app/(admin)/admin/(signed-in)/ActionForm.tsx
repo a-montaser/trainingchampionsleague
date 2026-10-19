@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, type ReactNode } from 'react';
+import type { ConfirmOptions } from '@/components/ConfirmDialog';
 import { SubmitButton } from '@/components/SubmitButton';
 import { Alert, cx } from '@/components/ui';
 import type { ActionState } from './actions';
@@ -19,6 +20,7 @@ export function ActionForm({
   variant = 'primary',
   className,
   inline,
+  confirm,
 }: {
   action: (prev: ActionState, formData: FormData) => Promise<ActionState>;
   children?: ReactNode;
@@ -28,6 +30,8 @@ export function ActionForm({
   className?: string;
   /** Lays the control out as a single row, for table-row actions. */
   inline?: boolean;
+  /** Asks "are you sure?" in a dialog before submitting. */
+  confirm?: ConfirmOptions;
 }) {
   const [state, formAction] = useActionState<ActionState, FormData>(action, {});
 
@@ -42,6 +46,7 @@ export function ActionForm({
         variant={variant}
         pendingLabel={pendingLabel}
         className={inline ? 'min-h-9 px-3 text-sm' : undefined}
+        confirm={confirm}
       >
         {submitLabel}
       </SubmitButton>

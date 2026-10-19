@@ -226,6 +226,11 @@ export default async function AdminEntriesPage({ searchParams }: PageProps<'/adm
                                 submitLabel="Reject"
                                 variant="danger"
                                 inline
+                                confirm={{
+                                  title: 'Reject this entry?',
+                                  message: `${entry.userName}'s "${entry.trainingName}" will stop counting towards the standings. You can approve it again later.`,
+                                  confirmLabel: 'Reject entry',
+                                }}
                               >
                                 <input type="hidden" name="entryId" value={entry.id} />
                                 <input type="hidden" name="status" value="rejected" />
@@ -237,6 +242,11 @@ export default async function AdminEntriesPage({ searchParams }: PageProps<'/adm
                               submitLabel="Delete entry"
                               variant="danger"
                               inline
+                              confirm={{
+                                title: 'Delete this entry?',
+                                message: `${entry.userName}'s "${entry.trainingName}" (${formatHours(entry.durationMinutes)} hours) is removed permanently and no longer counts. This is recorded in the audit log.`,
+                                confirmLabel: 'Delete entry',
+                              }}
                             >
                               <input type="hidden" name="entryId" value={entry.id} />
                             </ActionForm>

@@ -2,7 +2,6 @@ import {
   Alert,
   Card,
   CardBody,
-  Checkbox,
   Field,
   Input,
   Table,
@@ -147,9 +146,16 @@ export default async function AdminManagersPage() {
                   submitLabel="Remove"
                   variant="danger"
                   inline
+                  confirm={{
+                    title: `Remove ${manager.name}?`,
+                    message:
+                      manager.teams.length > 0
+                        ? `${manager.teams.map((team) => team.name).join(', ')} will have no manager, so their people drop off the manager leaderboard until you assign a new one.`
+                        : 'They are removed from the list of people managers.',
+                    confirmLabel: 'Remove manager',
+                  }}
                 >
                   <input type="hidden" name="managerId" value={manager.id} />
-                  <Checkbox name="confirm" value="yes" label="Confirm" />
                 </ActionForm>
               </div>
             </div>

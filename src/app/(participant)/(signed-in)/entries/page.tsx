@@ -129,7 +129,16 @@ export default async function MyEntriesPage({ searchParams }: PageProps<'/entrie
                             </Link>
                             <form action={deleteEntryAction}>
                               <input type="hidden" name="entryId" value={entry.id} />
-                              <SubmitButton variant="ghost" pendingLabel="…" className="min-h-9 px-2 text-sm">
+                              <SubmitButton
+                                variant="ghost"
+                                pendingLabel="…"
+                                className="min-h-9 px-2 text-sm"
+                                confirm={{
+                                  title: 'Delete this training?',
+                                  message: `"${entry.trainingName}" (${formatHours(entry.durationMinutes)} hours) is removed permanently and no longer counts for you or your team.`,
+                                  confirmLabel: 'Delete training',
+                                }}
+                              >
                                 Delete
                               </SubmitButton>
                             </form>
