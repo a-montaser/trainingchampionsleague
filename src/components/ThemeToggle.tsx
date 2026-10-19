@@ -1,14 +1,11 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import { THEME_COOKIE_KEY, type Theme } from '@/lib/theme';
 import { cx } from './ui';
-
-export const THEME_COOKIE_KEY = 'tcl-theme';
 
 /** A year, so a choice sticks until it is changed. */
 const THEME_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
-
-export type Theme = 'dark' | 'light';
 
 /**
  * Light/dark switch, pinned bottom-right on every screen.

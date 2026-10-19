@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Manrope, Outfit } from 'next/font/google';
 import { cookies } from 'next/headers';
-import { ThemeToggle, THEME_COOKIE_KEY } from '@/components/ThemeToggle';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { THEME_COOKIE_KEY } from '@/lib/theme';
 import './globals.css';
 
 // Self-hosted by Next at build time, so there is no request to Google at
